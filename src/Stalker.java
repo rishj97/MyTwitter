@@ -8,66 +8,96 @@ public class Stalker {
     Twitter twitter = tf.getInstance();
 
     Scanner sc = new Scanner(System.in);
-    System.out.println("Enter name of person you want to stalk lol:");
-    String stalk = sc.nextLine();
-    ResponseList<User> searchResults = twitter.searchUsers(stalk, -1);
-    for (int i = 0; i < searchResults.size(); i++) {
-      System.out.println(i + ".");
-      System.out.println(searchResults.get(i).getName());
-      System.out.println(searchResults.get(i).getBiggerProfileImageURL());
-      System.out.println();
-    }
-    System.out.println("Choose");
-    int choice = sc.nextInt();
-    assert (choice >= 0 && choice < searchResults.size()) : "Invalid index";
 
-    User userStalk = searchResults.get(choice);
-
-    HashMap<Long, Integer> mapLikes = new HashMap<Long, Integer>();
-    HashMap<Long, String> mapName = new HashMap<Long, String>();
-    int flag = 1;
-    int totalLikes = 0;
     while (true) {
-      Paging paging = new Paging();
-      paging.setCount(userStalk.getFavouritesCount());
-      ResponseList<Status> favourites = null;
-      try {
-        favourites = twitter.getFavorites(userStalk.getId(), new Paging(flag, 1000));
-      } catch (TwitterException te) {
-        System.out.println("twitter exception caught");
-        Date date = new Date();
-        int timeRemaining = te.getRateLimitStatus().getSecondsUntilReset();
-        long timeStop = date.getTime() + timeRemaining * 1000;
-        System.out.println("started waiting... " + date);
-        while (new Date().getTime() < timeStop) {
-        }
-        System.out.println("...stopped waiting " + new Date());
-        continue;
+      System.out.println("Enter name of person:");
+      String searchName = "";
+      while (searchName.length() == 0) {
+        searchName = sc.nextLine();
       }
-      flag++;
 
-      totalLikes += favourites.size();
-      if (favourites.size() == 0) {
+      ResponseList<User> searchResults = twitter.searchUsers(searchName, -1);
+      for (int i = 0; i < searchResults.size(); i++) {
+        System.out.println(i + "." + searchResults.get(i).getName() + "  " +
+            searchResults.get(i).getScreenName());
+        System.out.println(searchResults.get(i).getBiggerProfileImageURL());
+        System.out.println();
+      }
+      System.out.println("Enter -1 if you want to search again!");
+      System.out.println();
+      System.out.println("Input ->");
+      int choice = sc.nextInt();
+      if (choice == -1) {
+        continue;
+      } else if (choice < 0 || choice >= searchResults.size()) {
+        endCredits();
+        return;
+      }
+
+      User userStalk = searchResults.get(choice);
+
+      HashMap<Long, Integer> mapLikes = new HashMap<Long, Integer>();
+      HashMap<Long, String> mapName = new HashMap<Long, String>();
+      int flag = 1;
+      int totalLikes = 0;
+      while (true) {
+        Paging paging = new Paging();
+        paging.setCount(userStalk.getFavouritesCount());
+        ResponseList<Status> favourites;
+        try {
+          favourites = twitter.getFavorites(userStalk.getId(), new Paging(flag, 1000));
+        } catch (TwitterException te) {
+          System.out.println("twitter exception caught");
+          Date date = new Date();
+          int timeRemaining = te.getRateLimitStatus().getSecondsUntilReset();
+          long timeStop = date.getTime() + timeRemaining * 1000;
+          System.out.println("started waiting... " + date);
+          while (new Date().getTime() < timeStop) {
+          }
+          System.out.println("...stopped waiting " + new Date());
+          continue;
+        }
+        flag++;
+
+        totalLikes += favourites.size();
+        if (favourites.size() == 0) {
+          break;
+        }
+        for (Status status : favourites) {
+          if (mapLikes.get(status.getUser().getId()) == null) {
+            mapLikes.put(status.getUser().getId(), 1);
+            mapName.put(status.getUser().getId(), status.getUser().getName());
+          } else {
+            int n = mapLikes.get(status.getUser().getId());
+            mapLikes.put(status.getUser().getId(), n + 1);
+          }
+        }
+      }
+      System.out.println("total likes: " + totalLikes);
+      mapLikes = sortHashMapByValues(mapLikes);
+      Set<Long> userIds = mapLikes.keySet();
+      for (long userId : userIds) {
+        int likes = mapLikes.get(userId);
+        String name = mapName.get(userId);
+        System.out.println(name + " " + likes);
+      }
+      System.out.println();
+      System.out.print("Would you like to continue (Y or N): ");
+      String c = sc.next();
+      if (c.equalsIgnoreCase("n")) {
         break;
       }
-      for (Status status : favourites) {
-        if (mapLikes.get(status.getUser().getId()) == null) {
-          mapLikes.put(status.getUser().getId(), 1);
-          mapName.put(status.getUser().getId(), status.getUser().getName());
-        } else {
-          int n = mapLikes.get(status.getUser().getId());
-          mapLikes.put(status.getUser().getId(), n + 1);
-        }
-      }
+
     }
-    System.out.println("total likes: " + totalLikes);
-    mapLikes = sortHashMapByValues(mapLikes);
-    Set<Long> userIds = mapLikes.keySet();
-    for (long userId : userIds) {
-      int likes = mapLikes.get(userId);
-      String name = mapName.get(userId);
-      System.out.println(name + " " + likes);
-    }
+  }
+
+  private static void endCredits() {
+    System.out.println("-----------------------------------------------------");
+    System.out.println("Thank you!");
+    System.out.println("Credits: ");
+    System.out.println("Rishabh Jain");
+    System.out.println("wakeuprj@gmail.com");
+    System.out.println("-----------------------------------------------------");
   }
 
   public static HashMap<Long, Integer> sortHashMapByValues(
@@ -80,9 +110,7 @@ public class Stalker {
     HashMap<Long, Integer> sortedMap =
         new LinkedHashMap<Long, Integer>();
 
-    Iterator<Integer> valueIt = mapValues.iterator();
-    while (valueIt.hasNext()) {
-      int val = valueIt.next();
+    for (Integer val : mapValues) {
       Iterator<Long> keyIt = mapKeys.iterator();
 
       while (keyIt.hasNext()) {
