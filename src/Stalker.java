@@ -15,6 +15,7 @@ public class Stalker {
       while (searchName.length() == 0) {
         searchName = sc.nextLine();
       }
+      System.out.println("[Searching... " + new Date());
 
       ResponseList<User> searchResults = twitter.searchUsers(searchName, -1);
       for (int i = 0; i < searchResults.size(); i++) {
@@ -34,32 +35,45 @@ public class Stalker {
         return;
       }
 
-      User userStalk = searchResults.get(choice);
+      User user = searchResults.get(choice);
 
       HashMap<Long, Integer> mapLikes = new HashMap<Long, Integer>();
       HashMap<Long, String> mapName = new HashMap<Long, String>();
-      int flag = 1;
-      int totalLikes = 0;
+      int pageCounter = 1;
+      int totalFavourites = 0;
       while (true) {
         Paging paging = new Paging();
-        paging.setCount(userStalk.getFavouritesCount());
+        paging.setCount(user.getFavouritesCount());
         ResponseList<Status> favourites;
         try {
-          favourites = twitter.getFavorites(userStalk.getId(), new Paging(flag, 1000));
+          favourites = twitter.getFavorites(user.getId(), new Paging(pageCounter, 1000));
         } catch (TwitterException te) {
-          System.out.println("twitter exception caught");
+          System.out.println("Twitter exception caught for exceeding Rate " +
+              "Limit!!");
           Date date = new Date();
           int timeRemaining = te.getRateLimitStatus().getSecondsUntilReset();
           long timeStop = date.getTime() + timeRemaining * 1000;
-          System.out.println("started waiting... " + date);
+          System.out.println("Would you like to wait for " + timeRemaining /
+              (double) 60
+              + " minutes? (Y/N)");
+          String resopnse = "";
+          while (resopnse.length() == 0) {
+            resopnse = sc.nextLine();
+          }
+          if (resopnse.equalsIgnoreCase("N")) {
+            endCredits();
+            return;
+          }
+
+          System.out.println("[Started waiting... " + date);
           while (new Date().getTime() < timeStop) {
           }
-          System.out.println("...stopped waiting " + new Date());
+          System.out.println("[...stopped waiting " + new Date());
           continue;
         }
-        flag++;
+        pageCounter++;
 
-        totalLikes += favourites.size();
+        totalFavourites += favourites.size();
         if (favourites.size() == 0) {
           break;
         }
@@ -73,7 +87,7 @@ public class Stalker {
           }
         }
       }
-      System.out.println("total likes: " + totalLikes);
+      System.out.println("total likes: " + totalFavourites);
       mapLikes = sortHashMapByValues(mapLikes);
       Set<Long> userIds = mapLikes.keySet();
       for (long userId : userIds) {
@@ -85,6 +99,7 @@ public class Stalker {
       System.out.print("Would you like to continue (Y or N): ");
       String c = sc.next();
       if (c.equalsIgnoreCase("n")) {
+        endCredits();
         break;
       }
 
