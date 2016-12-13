@@ -3,6 +3,10 @@ import twitter4j.*;
 import java.util.*;
 
 public class Stalker {
+  final static int MILLI_OFFSET = 1000;
+  final static int SECS_IN_MIN = 60;
+  final static String ANSI_CLS = "\033[2J\033[1;1H";
+
   public static void main(String[] args) throws TwitterException, InterruptedException {
     TwitterFactory tf = new TwitterFactory();
     Twitter twitter = tf.getInstance();
@@ -10,18 +14,21 @@ public class Stalker {
     Scanner sc = new Scanner(System.in);
 
     while (true) {
+      System.out.print(ANSI_CLS);
       System.out.println("Enter name of person:");
       String searchName = "";
       while (searchName.length() == 0) {
         searchName = sc.nextLine();
       }
+      System.out.print(ANSI_CLS);
       System.out.println("[Searching... " + new Date());
 
       ResponseList<User> searchResults = twitter.searchUsers(searchName, -1);
-      for (int i = 0; i < searchResults.size(); i++) {
+      System.out.print(ANSI_CLS);
+      for (int i = 0; i < Math.min(searchResults.size(), 5); i++) {
         System.out.println(i + "." + searchResults.get(i).getName() + "  " +
             searchResults.get(i).getScreenName());
-        System.out.println(searchResults.get(i).getBiggerProfileImageURL());
+        System.out.println(searchResults.get(i).getLocation());
         System.out.println();
       }
       System.out.println("Enter -1 if you want to search again!");
@@ -42,8 +49,6 @@ public class Stalker {
       int pageCounter = 1;
       int totalFavourites = 0;
       while (true) {
-        Paging paging = new Paging();
-        paging.setCount(user.getFavouritesCount());
         ResponseList<Status> favourites;
         try {
           favourites = twitter.getFavorites(user.getId(), new Paging(pageCounter, 1000));
@@ -52,15 +57,16 @@ public class Stalker {
               "Limit!!");
           Date date = new Date();
           int timeRemaining = te.getRateLimitStatus().getSecondsUntilReset();
-          long timeStop = date.getTime() + timeRemaining * 1000;
+          long timeStop = date.getTime() + timeRemaining * MILLI_OFFSET;
+
           System.out.println("Would you like to wait for " + timeRemaining /
-              (double) 60
-              + " minutes? (Y/N)");
+              (double) SECS_IN_MIN
+              + " minutes? (y or n)");
           String resopnse = "";
           while (resopnse.length() == 0) {
             resopnse = sc.nextLine();
           }
-          if (resopnse.equalsIgnoreCase("N")) {
+          if (resopnse.equalsIgnoreCase("n")) {
             endCredits();
             return;
           }
@@ -87,6 +93,7 @@ public class Stalker {
           }
         }
       }
+      System.out.print(ANSI_CLS);
       System.out.println("total likes: " + totalFavourites);
       mapLikes = sortHashMapByValues(mapLikes);
       Set<Long> userIds = mapLikes.keySet();
@@ -96,7 +103,7 @@ public class Stalker {
         System.out.println(name + " " + likes);
       }
       System.out.println();
-      System.out.print("Would you like to continue (Y or N): ");
+      System.out.print("Would you like to continue (y or n): ");
       String c = sc.next();
       if (c.equalsIgnoreCase("n")) {
         endCredits();
@@ -107,6 +114,7 @@ public class Stalker {
   }
 
   private static void endCredits() {
+    System.out.print(ANSI_CLS);
     System.out.println("-----------------------------------------------------");
     System.out.println("Thank you!");
     System.out.println("Credits: ");
@@ -120,7 +128,6 @@ public class Stalker {
     List<Long> mapKeys = new ArrayList<Long>(passedMap.keySet());
     List<Integer> mapValues = new ArrayList<Integer>(passedMap.values());
     Collections.sort(mapValues);
-    Collections.sort(mapKeys);
 
     HashMap<Long, Integer> sortedMap =
         new LinkedHashMap<Long, Integer>();

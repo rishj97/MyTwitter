@@ -2,7 +2,5 @@
 MyTwitter.iml
 out/
 src/MyFacebook.java
-src/UpdateTwitterStatus.class
-src/facebook4j.properties
-src/twitter4j.properties
+*.properties
 *.class
