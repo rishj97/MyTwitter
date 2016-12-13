@@ -1,2 +1,2 @@
 # MyTwitter
-![alt tag](https://raw.githubusercontent.com/wakeuprj/MyTwitter/StalkerUse.gif)
+![Stalker Usage](https://raw.githubusercontent.com/wakeuprj/MyTwitter/master/StalkerUse.gif)
