@@ -2,7 +2,7 @@ import twitter4j.*;
 
 import java.util.*;
 
-public class Stalker {
+public class TwitterLikes {
   final static int MILLI_OFFSET = 1000;
   final static int SECS_IN_MIN = 60;
   final static String ANSI_CLS = "\033[2J\033[1;1H";
